@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_modular/flutter_modular_test.dart';
+import 'package:bloc_pattern/bloc_pattern_test.dart';
 
 import 'package:controlefinanceiroapp/app/modules/home/home_page.dart';
 

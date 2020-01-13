@@ -1,17 +1,21 @@
-import 'package:controlefinanceiroapp/app/modules/home/home_controller.dart';
-import 'package:flutter_modular/flutter_modular.dart';
+import 'package:controlefinanceiroapp/app/app_module.dart';
+import 'package:controlefinanceiroapp/app/modules/home/home_bloc.dart';
+import 'package:bloc_pattern/bloc_pattern.dart';
+import 'package:controlefinanceiroapp/app/shared/repositories/hasura_repository.dart';
+import 'package:flutter/material.dart';
 import 'package:controlefinanceiroapp/app/modules/home/home_page.dart';
 
-class HomeModule extends ChildModule {
+class HomeModule extends ModuleWidget {
   @override
-  List<Bind> get binds => [
-        Bind((i) => HomeController()),
+  List<Bloc> get blocs => [
+        Bloc((i) => HomeBloc(AppModule.to.get<HasuraRepository>())),
       ];
 
   @override
-  List<Router> get routers => [
-        Router('/', child: (_, args) => HomePage()),
-      ];
+  List<Dependency> get dependencies => [];
+
+  @override
+  Widget get view => HomePage();
 
   static Inject get to => Inject<HomeModule>.of();
 }
