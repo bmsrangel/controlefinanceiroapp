@@ -1,15 +1,16 @@
 import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:controlefinanceiroapp/app/shared/models/categoria_model.dart';
-import 'package:controlefinanceiroapp/app/shared/models/mes_model.dart';
+import 'package:controlefinanceiroapp/app/shared/models/registro_model.dart';
 import 'package:controlefinanceiroapp/app/shared/repositories/hasura_repository.dart';
+import 'package:hasura_connect/hasura_connect.dart';
 import 'package:rxdart/rxdart.dart';
 
 class HomeBloc extends BlocBase {
   final HasuraRepository repo;
 
   HomeBloc(this.repo) {
-    Future.delayed(Duration(milliseconds: 400), () {
-      getAllMeses();
+    Future.delayed(Duration(milliseconds: 500), () {
+      getLastRegistros();
     });
   }
 
@@ -23,14 +24,12 @@ class HomeBloc extends BlocBase {
   Sink<CategoriaModel> get inSelecionada => categoriaSelecionada$.sink;
   Stream<CategoriaModel> get outSelecionada => categoriaSelecionada$.stream;
 
-  BehaviorSubject<MesModel> pagSelec$ = BehaviorSubject<MesModel>();
-  Sink<MesModel> get inPageSel => pagSelec$.sink;
-  Stream<MesModel> get outPageSel => pagSelec$.stream;
+  BehaviorSubject<List<RegistroModel>> registros$ =
+      BehaviorSubject<List<RegistroModel>>();
+  Sink<List<RegistroModel>> get inRegistros => registros$.sink;
+  Stream<List<RegistroModel>> get outRegistros => registros$.stream;
 
-  BehaviorSubject<List<MesModel>> meses$ = BehaviorSubject<List<MesModel>>();
-  Sink<List<MesModel>> get inMeses => meses$.sink;
-  Stream<List<MesModel>> get outMeses => meses$.stream;
-  List<MesModel> pages;
+  List<RegistroModel> pages;
 
   Future<void> getAllCategories() async {
     List<CategoriaModel> categorias = await repo.getAllCategorias();
@@ -40,10 +39,16 @@ class HomeBloc extends BlocBase {
     inCategorias.add(categorias);
   }
 
-  Future<void> getAllMeses() async {
-    pages = await repo.getAllMesesComRegistros();
-    inMeses.add(pages);
-    inPageSel.add(pages[0]);
+  Future<void> getLastRegistros({int limite}) async {
+    try {
+      pages = await repo.getLastRegistros(limite: limite ?? 10);
+      inRegistros.add(pages);
+    } on HasuraError catch (e) {
+      if (e.message == "connection error")
+        registros$.addError("Erro de conexão com o banco de dados");
+      else
+        registros$.addError(e.message);
+    }
   }
 
   //dispose will be called automatically by closing its streams
@@ -51,8 +56,7 @@ class HomeBloc extends BlocBase {
   void dispose() {
     categorias$.close();
     categoriaSelecionada$.close();
-    pagSelec$.close();
-    meses$.close();
+    registros$.close();
     super.dispose();
   }
 }

@@ -1,6 +1,6 @@
 import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:controlefinanceiroapp/app/shared/models/categoria_model.dart';
-import 'package:controlefinanceiroapp/app/shared/models/mes_model.dart';
+import 'package:controlefinanceiroapp/app/shared/models/registro_model.dart';
 import 'package:controlefinanceiroapp/app/shared/services/secure_storage_service.dart';
 import 'package:hasura_connect/hasura_connect.dart';
 
@@ -16,6 +16,7 @@ class HasuraRepository extends Disposable {
     uid = await _secureStorage.getUid();
     _connection = HasuraConnect(
       "https://controlefinanceiroapp.herokuapp.com/v1/graphql",
+      // "http://10.0.2.2:8080/v1/graphql",
       token: (isError) async {
         String token = await _secureStorage.getToken();
         if (token != null) return "Bearer $token";
@@ -45,37 +46,28 @@ class HasuraRepository extends Disposable {
     }
   }
 
-  Future<List<MesModel>> getAllMesesComRegistros() async {
+  Future<List<RegistroModel>> getLastRegistros({int limite}) async {
     String query = """
-      query allMeses {
-        meses(order_by: {ano: desc, num_mes: desc}) {
+      query getLastRegistros(\$limite:Int!) {
+        registros(limit: \$limite, order_by: {data: desc}) {
           id
-          mes
-          ano
-          num_mes
+          descricao
+          data
+          valor
+          categoria {
+            id
+            categoria
+          }
         }
       }
     """;
-
-    try {
-      var data = await _connection.query(query);
-      return data["data"]["meses"]
-          .map<MesModel>((mes) => MesModel.fromJson(mes))
-          .toList();
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  Future<void> addMes() async {
-    String query = """
-      mutation addMes {
-        insert_meses(objects: {mes: "Fevereiro", ano: 2020, num_mes: 2, uid: "kluXHFHX3IUlhb4PPyHpINcptQE2"}) {
-          affected_rows
-        }
-      }
-
-    """;
+    var data = await _connection.query(query, variables: {
+      "limite": limite,
+    });
+    print(data);
+    return data["data"]["registros"]
+        .map<RegistroModel>((registro) => RegistroModel.fromJson(registro))
+        .toList();
   }
 
   //dispose will be called automatically
